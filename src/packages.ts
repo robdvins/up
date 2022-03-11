@@ -10,6 +10,7 @@ export interface PackageMeta {
   filepath: string
   // Relative filepath to the root project.
   relative: string
+  hasChanges: boolean
   // Raw package.json Object.
   raw: Record<string, any>
   // Other packages that depend on this.
@@ -25,6 +26,7 @@ export async function loadPackage(relative: string): Promise<PackageMeta> {
     version: raw.version,
     filepath,
     relative,
+    hasChanges: await hasModifiedFolder(path.dirname(relative)),
     raw,
     dependents: []
   }
@@ -36,10 +38,9 @@ export async function loadModifiedPackages() {
     ignore: ['**/node_modules/**', '**/dist/**', '**/public/**']
   })
 
-  const modifiedPackages = packagesPaths.filter((relative) => hasModifiedFolder(relative))
-  const packages = await Promise.all(modifiedPackages.map((relative) => loadPackage(relative)))
+  const packages = await Promise.all(packagesPaths.map((relative) => loadPackage(relative)))
   buildDependencyGraph(packages)
-  return packages
+  return packages.filter((pkg) => pkg.hasChanges)
 }
 
 function buildDependencyGraph(packages: PackageMeta[]) {
