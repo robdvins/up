@@ -1,7 +1,7 @@
 {
   "name": "@robdvins/up",
   "version": "0.0.0",
-  "description": "",
+  "description": "Pretty simple, opinionated CLI command to bump versions with a focus on monorepos.",
   "type": "module",
   "author": "Roberto Duarte",
   "license": "MIT",
