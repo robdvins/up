@@ -60,7 +60,7 @@ export async function up(opts: CommandOptions) {
   // Check for git repo.
   if (!fs.pathExistsSync('.git')) terminate('Git not initialized! 😢')
   // Check for untracked files.
-  if (!(await hasUntrackedFiles())) terminate('Untracked files present.')
+  if (await hasUntrackedFiles()) terminate('Untracked files present.')
   // Check if branch is outdated with remote.
   if (await isOutdated(opts.branch)) terminate('Git branch is not in sync with remote.')
 
