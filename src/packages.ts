@@ -52,9 +52,14 @@ function buildDependencyGraph(packages: PackageMeta[]) {
 function updateDependent(dependent: PackageMeta, type: string, pkg: PackageMeta) {
   const deps = dependent.raw[type]
   if (!deps) return
-  if (!deps[pkg.name]) return
 
-  deps[pkg.name] = pkg.version
+  const version: string = deps[pkg.name]
+  if (!version) return
+  if (version === 'latest') return
+
+  const rangePrefix: string = version.match(/~|\^/)?.[0] ?? ''
+
+  deps[pkg.name] = rangePrefix + pkg.raw.version
 }
 
 export function updatePackagesVersion(packages: PackageMeta[], versions: Record<string, string>) {
