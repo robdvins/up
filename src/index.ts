@@ -31,24 +31,44 @@ async function packageSelection(packages: PackageMeta[]) {
 }
 
 async function versionSelection(packages: PackageMeta[]) {
-  const types: semver.ReleaseType[] = ['major', 'minor', 'patch']
+  const types: semver.ReleaseType[] = ['major', 'minor', 'patch', 'premajor', 'preminor', 'prepatch', 'prerelease']
 
-  const versions = (oldVersion: string) =>
-    types.reduce((obj, type) => {
+  const versions = (oldVersion: string) => {
+    return types.reduce((obj, type) => {
       obj[type] = semver.inc(oldVersion, type) ?? ''
       return obj
     }, {} as Record<semver.ReleaseType, string>)
+  }
 
   const responses = await prompts(
-    packages.map((pkg) => ({
-      type: 'select',
-      name: pkg.name,
-      message: `Select new version for ${pc.cyan(pkg.name)}`,
-      choices: types.map((type) => ({
-        title: `${type.charAt(0).toUpperCase() + type.slice(1)} (${versions(pkg.version)[type]})`,
-        value: versions(pkg.version)[type]
-      }))
-    })),
+    packages.flatMap((pkg) => [
+      {
+        type: 'select',
+        name: pkg.name,
+        message: `Select new version for ${pc.cyan(pkg.name)}`,
+        choices: types
+          .map((type) => ({
+            title: `${type.charAt(0).toUpperCase() + type.slice(1)} (${versions(pkg.version)[type]})`,
+            value: versions(pkg.version)[type]
+          }))
+          .concat([
+            {
+              title: 'Custom',
+              value: '_custom'
+            }
+          ])
+      },
+      {
+        name: pkg.name,
+        type: (prev) => (prev === '_custom' ? 'text' : null),
+        message: 'Enter new custom version',
+        validate: (value) => {
+          if (value === '') return 'Version is required!'
+          if (!semver.valid(value)) return 'Invalid version!'
+          return true
+        }
+      }
+    ]),
     { onCancel: () => terminate('Aborted!') }
   )
 
@@ -79,7 +99,7 @@ export async function up(opts: CommandOptions) {
     finalMsg = `Run ${pc.magenta('up -w')} to write package.json files.\n`
   } else {
     dependentsMsg = 'upgraded to'
-    finalMsg = `${pc.magenta('Changes wrote to package.json files.')}\n`
+    finalMsg = `${pc.green('✓ Changes wrote to package.json files.')}\n`
     updatePackagesVersion(selectedPackages, versions)
     await Promise.all(selectedPackages.flatMap((pkg) => writePackage(pkg)))
   }
